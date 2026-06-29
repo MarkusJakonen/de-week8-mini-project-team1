@@ -3,9 +3,10 @@ DE Week 8 Mini-Project Team 1
 
 ## Folder structure
 ```text
-/bronze    Bronze-level files including ingestion
-/silver    Silver-level files
-/gold      Gold-level files including Power BI reports
+/Docs      Project documentation that applies to multiple levels
+/Bronze    Bronze-level files including ingestion
+/Silver    Silver-level files
+/Gold      Gold-level files including Power BI reports
 README.md  The main readme file
 ```
 
