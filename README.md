@@ -13,3 +13,8 @@ README.md  The main readme file
 
 - All backlog items are implemented by creating a Git branch, then a pull request, and merge to main when the change is reviewed
 - When implementing a backlog item, also include related documentation written to a README.md file
+
+## Definition of done
+
+- Backlog item is implemented on a Git branch and pull request reviewed by at least one team member
+- Related documentation is updated to Git, to a README.md file
