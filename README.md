@@ -8,3 +8,8 @@ DE Week 8 Mini-Project Team 1
 /gold      Gold-level files including Power BI reports
 README.md  The main readme file
 ```
+
+## Ways of working
+
+- All backlog items are implemented by creating a Git branch, then a pull request, and merge to main when the change is reviewed
+- When implementing a backlog item, also include related documentation written to a README.md file
