@@ -6,10 +6,6 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime
 
-BASE_DIR = Path.cwd()
-OUTPUT_DIR = BASE_DIR / "Bronze" 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
 load_dotenv()
 
 OPENCHARGEMAP_API_KEY = os.getenv("OPENCHARGEMAP_API_KEY")
@@ -34,7 +30,7 @@ open_charge_raw_FI = pd.json_normalize(data)
 
 open_charge_raw_FI["fetch_timestamp"] = pd.Timestamp.now('UTC')
 
-open_charge_raw_FI.to_csv(OUTPUT_DIR / 'open_charge_raw_FI.csv', index=False)
+open_charge_raw_FI.to_csv('open_charge_raw_FI.csv', index=False)
 
 # %%
 
@@ -58,7 +54,7 @@ open_charge_raw_SE = pd.json_normalize(data)
 
 open_charge_raw_SE["fetch_timestamp"] = pd.Timestamp.now('UTC')
 
-open_charge_raw_FI.to_csv(OUTPUT_DIR / 'open_charge_raw_SE.csv', index=False)
+open_charge_raw_FI.to_csv('open_charge_raw_SE.csv', index=False)
 
 #%%
 
