@@ -1,10 +1,8 @@
 #%%
 import requests
 import pandas as pd
-from pathlib import Path
 from dotenv import load_dotenv
 import os
-from datetime import datetime
 
 load_dotenv()
 
@@ -54,7 +52,7 @@ open_charge_raw_SE = pd.json_normalize(data)
 
 open_charge_raw_SE["fetch_timestamp"] = pd.Timestamp.now('UTC')
 
-open_charge_raw_FI.to_csv('open_charge_raw_SE.csv', index=False)
+open_charge_raw_SE.to_csv('open_charge_raw_SE.csv', index=False)
 
 #%%
 
