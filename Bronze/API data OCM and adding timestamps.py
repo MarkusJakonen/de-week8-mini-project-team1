@@ -58,12 +58,12 @@ open_charge_raw_FI.to_csv('open_charge_raw_SE.csv', index=False)
 
 #%%
 
-new_car_registrations_finland = pd.read_csv('new_car_registrations_finland.csv',  encoding="latin1")
-new_car_registrations_sweden = pd.read_csv('new_car_registrations_sweden.csv',  encoding="latin1")
+new_car_registrations_finland = pd.read_csv('new_car_registrations_FI.csv', encoding="latin1")
+new_car_registrations_sweden = pd.read_csv('new_car_registrations_SE.csv', encoding='latin1')
 
 new_car_registrations_finland["fetch_timestamp"] = pd.Timestamp.now('UTC')
 new_car_registrations_sweden["fetch_timestamp"] = pd.Timestamp.now('UTC')
 
-new_car_registrations_finland.to_csv('new_car_registrations_finland.csv',  encoding="utf-8", index=False)
-new_car_registrations_sweden.to_csv('new_car_registrations_sweden.csv',  encoding="utf-8", index=False)
+new_car_registrations_finland.to_csv('new_car_registrations_FI.csv',  encoding="latin1", index=False)
+new_car_registrations_sweden.to_csv('new_car_registrations_SE.csv',  encoding="latin1", index=False)
 # %%
