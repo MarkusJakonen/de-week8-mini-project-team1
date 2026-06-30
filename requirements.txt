@@ -5,4 +5,7 @@ pyodbc
 python-dotenv
 jupyter
 ipykernel
-openpyxl>=3.1
+openpyxl>=3.1 # To read the municipality Excel file
+geopandas>=1.1 # The main library for reading GeoPackages and performing spatial joins
+pyogrio>=0.11 # Fast and recommended I/O backend for GeoPandas. It handles .gpkg files efficiently.
+shapely>=2.1 # Used by GeoPandas for creating and working with geometries (e.g. points_from_xy())
