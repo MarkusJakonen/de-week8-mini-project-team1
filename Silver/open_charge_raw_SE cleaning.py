@@ -5,7 +5,7 @@ import geopandas as gpd
 df = pd.read_csv('../Bronze/open_charge_raw_SE.csv')
 
 # %%
-# take only dates from 2016 to 2026 Mai
+# take dates until 2026 May
 df["DateCreated"] = pd.to_datetime(df["DateCreated"], errors="coerce")
 
 df = df[
@@ -16,7 +16,8 @@ df = df[
 df_silver = pd.DataFrame({
     "id": df["ID"],
     "number_of_points": df["NumberOfPoints"],
-    "date_created": df["DateCreated"],
+    "year": df["DateCreated"].dt.year,
+    'month': df["DateCreated"].dt.month,
     "is_operational": df["StatusType.IsOperational"],
     "country": df["AddressInfo.Country.Title"],
     "longitude": df["AddressInfo.Longitude"],
@@ -32,6 +33,25 @@ def add_rejection_reason(mask, reason):
         .apply(lambda x: f"{x}; {reason}" if x else reason)
         .replace("", pd.NA)
     )
+#%%
+df_silver["id"] = (
+    pd.to_numeric(df_silver["id"], errors="coerce")
+    .astype("Int64")
+)
+
+# id should be numeric and >= 1
+invalid_id = df_silver[
+    df_silver["id"].isna()
+    | (df_silver["id"] < 1)
+]
+
+add_rejection_reason(
+    invalid_id.index,
+    "INVALID_ID"
+)
+
+print("\n=== Ids ===")
+print(f"Invalid ids: {len(invalid_id)}")
 
 #%%
 df_silver["number_of_points"] = (
@@ -54,10 +74,6 @@ print("\n=== Number of points ===")
 print(f"Invalid number of points: {len(invalid_number_of_points)}")
 
 #%%
-df_silver['year'] = df_silver['date_created'].dt.year
-df_silver['month'] = df_silver['date_created'].dt.month
-
-df_silver = df_silver.drop(columns="date_created")
 
 # Invalid dates
 invalid_dates = df_silver[
@@ -90,7 +106,22 @@ add_rejection_reason(
 print("=== Date checks ===")
 print(f"Invalid dates: {len(invalid_dates)}")
 print(f"Invalid months: {len(invalid_month)}")
+#%%
+df_silver["country"] = df_silver["country"].astype("string").str.strip().str.title()
 
+# Country should be Sweden
+invalid_country = df_silver[
+    df_silver["country"].isna()
+    | (~df_silver["country"].eq('Sweden'))
+]
+
+add_rejection_reason(
+    invalid_country.index,
+    "INVALID_COUNTRY"
+)
+
+print("\n=== Countries ===")
+print(f"Invalid Countries: {len(invalid_country)}")
 # %%
 df_silver["longitude"] = pd.to_numeric(df_silver["longitude"], errors="coerce")
 df_silver["latitude"] = pd.to_numeric(df_silver["latitude"], errors="coerce")
@@ -107,8 +138,12 @@ zero_coordinates = df_silver[
 
 # 3. Outside Sweden bounding box
 outside_sweden = df_silver[
-    ~df_silver["latitude"].between(55.3, 69.1)
-    | ~df_silver["longitude"].between(10.9, 24.2)
+    df_silver["longitude"].notna()
+    & df_silver["latitude"].notna()
+    & (
+        ~df_silver["latitude"].between(55.3, 69.1)
+        | ~df_silver["longitude"].between(10.9, 24.2)
+    )
 ]
 
 # 4. Possible swapped lat/lon
@@ -231,7 +266,8 @@ VALID_REGIONS = {
 }
 
 invalid_regions = df_silver[
-    ~df_silver["region"].isin(VALID_REGIONS)
+    df_silver["region"].notna()
+    & ~df_silver["region"].isin(VALID_REGIONS)
 ]
 
 # Municipality-region combinations should be unique
@@ -266,7 +302,7 @@ add_rejection_reason(
 )
 
 add_rejection_reason(
-    invalid_municipality_region.index,
+    invalid_municipality_region_rows.index,
     "INVALID_MUNICIPALITY_REGION"
 )
 
