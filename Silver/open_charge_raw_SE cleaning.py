@@ -329,9 +329,8 @@ rejected_rows = df_silver[~df_silver["rejection_reason"].isna()]
 
 valid_rows = valid_rows.drop(columns="distance_to_municipality")
 rejected_rows = rejected_rows.drop(columns="distance_to_municipality")
-# %%
 
+# %%
 valid_rows.to_csv('../Silver/silver_ev_charging_stations_SE.csv', index=False)
 rejected_rows.to_csv('../Silver/REJECTED_silver_ev_charging_stations_SE.csv', index=False)
 
-# %%
