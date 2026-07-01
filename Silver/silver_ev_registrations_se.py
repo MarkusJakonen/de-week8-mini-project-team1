@@ -78,7 +78,7 @@ driving_power_map = {
     "electric hybrid": "electric hybrid",
     "plug-in hybrid": "plug-in hybrid",
     "ethanol/ethanol flexifuel": "petrol/ethanol",
-    "gas/gas flex": "natural gas",
+    "gas/gas flex": "gas/gas flex",
     "other fuels": "other"
 }
 
