@@ -1,6 +1,6 @@
 # Silver Python Transformations
 
-This folder contains the Silver-layer transformation scripts and outputs for new car registration data and Swedish EV charging station data.
+This folder contains the Silver-layer transformation scripts and outputs for new car registration data and EV charging station data.
 
 ## Transformation Scripts
 
@@ -9,6 +9,8 @@ This folder contains the Silver-layer transformation scripts and outputs for new
 | `silver_car_registrations_finland_script.ipynb` | `Bronze/new_car_registrations_FI.csv` | `silver_car_registrations_finland.csv` |
 | `silver_new_car_registrations_totals_lookup_finland_script.ipynb` | `Bronze/new_car_registrations_FI.csv` | `silver_new_car_registrations_totals_lookup_FI.csv` |
 | `silver_new_car_registrations_totals_lookup_sweden_script.ipynb` | `Bronze/new_car_registrations_SE.csv` | `silver_new_car_registrations_totals_lookup_SE.csv` |
+| `silver_ev_registrations_se.py` | `Bronze/new_car_registrations_SE.csv` | `silver_ev_registrations_se.csv` |
+| `silver_data_cleaning_open_charge_FI.ipynb` | `Bronze/open_charge_raw_FI.csv` | `silver_ev_charging_stations_FI.csv`, `REJECTED_silver_ev_charging_stations_FI.csv` |
 | `silver_ev_charging_stations_SE_script.ipynb` | `Bronze/open_charge_raw_SE.csv` | `silver_ev_charging_stations_SE.csv`, `REJECTED_silver_ev_charging_stations_SE.csv` |
 
 All scripts read from the `Bronze` folder and write to the `Silver` folder.
@@ -57,6 +59,44 @@ Region-level summary data for Sweden. One row per region, month, and driving pow
 | `number_of_new_registrations` | int | Number of newly registered passenger cars |
 | `driving_power` | str | Standardized driving power category (see below) |
 | `fetch_timestamp` | datetime | UTC timestamp from Bronze ingestion |
+
+### `silver_ev_registrations_se.csv`
+
+Municipality-level new passenger car registration data for Sweden. One row per municipality, month, and driving power category. Country-level and county-level summary rows are excluded since they can be derived by aggregating municipality rows. Data range starts from 01/2016.
+
+| Column | Type | Description |
+|---|---|---|
+| `country` | str | Always `"Sweden"` |
+| `year` | int | Registration year |
+| `month` | int | Registration month (1-12) |
+| `region` | str | Swedish county name, e.g. `"Stockholm"` |
+| `municipality` | str | Swedish municipality name |
+| `number_of_new_registrations` | int | Number of newly registered passenger cars |
+| `driving_power` | str | Standardized driving power category (see below) |
+| `fetch_timestamp` | datetime | UTC timestamp from Bronze ingestion |
+
+### `silver_ev_charging_stations_FI.csv`
+
+Validated and enriched Finnish EV charging station data. One row per charging station.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | int | Charging station identifier from Open Charge Map |
+| `number_of_points` | int | Number of charging points at the station |
+| `year` | int | Year the station was created |
+| `month` | int | Month the station was created |
+| `is_operational` | bool | Operational status of the charging station |
+| `municipality` | str | Finnish municipality from official boundary data |
+| `region` | str | Finnish region from official municipality-region lookup |
+| `country` | str | Always `"Finland"` |
+| `latitude` | float | Latitude coordinate |
+| `longitude` | float | Longitude coordinate |
+| `rejection_reason` | str | Empty for valid records |
+| `fetch_timestamp` | datetime | UTC timestamp from Bronze ingestion |
+
+### `REJECTED_silver_ev_charging_stations_FI.csv`
+
+Contains Finnish EV charging station records that failed one or more Silver-layer validation rules. The structure matches the valid dataset, but the `rejection_reason` column contains one or more validation codes describing why the row was rejected.
 
 ### `silver_ev_charging_stations_SE.csv`
 
@@ -120,6 +160,37 @@ Both countries use the same standardized `driving_power` values where possible. 
 - Region names are cleaned by stripping the numeric code prefix and ` county` suffix (e.g. `01 Stockholm county` → `Stockholm`). Former counties retain their `former` prefix.
 - Data is filtered to 01/2016–05/2026 to align with the Finnish dataset.
 
+### `silver_ev_registrations_se.py`
+
+- Column names are standardized to lowercase snake_case.
+- Source columns are renamed so `fuel` becomes `driving_power` and `new_registered_passenger_cars_number` becomes `number_of_new_registrations`.
+- Country-level total rows (`00 Sweden`) are removed.
+- Area code and area name are extracted from the source `region` column.
+- Only municipality-level rows are kept. County totals have two-digit area codes, while municipality rows have longer area codes.
+- Swedish counties are derived from the first two digits of the municipality area code using a hardcoded county lookup.
+- Municipality names are taken from the cleaned area name.
+- `country` is set to `"Sweden"`.
+- Month values such as `2006M01` are split into numeric `year` and `month` columns.
+- Rows before 2016 are removed.
+- Driving power values are standardized to the shared Silver categories.
+- `number_of_new_registrations` is converted to nullable integer values.
+- `fetch_timestamp` is converted to datetime.
+
+### `silver_data_cleaning_open_charge_FI.ipynb`
+
+- Relevant Open Charge Map columns are selected and renamed to the Silver schema.
+- `DateCreated` is converted to datetime and split into `year` and `month`.
+- API-provided town and region columns are kept temporarily for debugging, but are not trusted for final municipality and region values.
+- Official Finnish municipality and region data is loaded from Statistics Finland's municipality and regional divisions Excel file.
+- The special Excel value `Maarianhamina - Mariehamn` is standardized to `Maarianhamina`.
+- Numeric, boolean, string, and timestamp columns are converted to appropriate nullable Pandas dtypes.
+- Finnish charging station coordinates are converted to GeoPandas points.
+- Official National Land Survey of Finland municipality polygons are loaded from the GeoPackage file.
+- Charging station points are spatially joined to municipality polygons to derive official municipality names and municipality codes.
+- Regions are added by joining municipality codes to the official municipality-region lookup.
+- Rows are checked against business rules and quality checks.
+- Valid and rejected rows are split into `silver_ev_charging_stations_FI.csv` and `REJECTED_silver_ev_charging_stations_FI.csv`.
+
 ### `silver_ev_charging_stations_SE_script.ipynb`
 
 - Records are filtered to charging stations created up to **31 May 2026**.
@@ -132,7 +203,20 @@ Both countries use the same standardized `driving_power` values where possible. 
 - Invalid rows receive one or more rejection codes in the `rejection_reason` column.
 - Valid and rejected records are written to separate output files.
 
-### EV Charging Station Validation Rules
+### Finnish EV Charging Station Validation Rules
+
+Possible rejection reasons include:
+
+- `REGION_NOT_INCLUDED`
+- `DATE_AFTER_REFERENCE_PERIOD`
+- `DUPLICATE_IDS`
+- `MISSING_MUNICIPALITY_ENRICHMENT`
+- `MISSING_REGION_ENRICHMENT`
+- `INVALID_COORDINATES`
+- `INVALID_NUMBER_OF_POINTS`
+- `INVALID_MUNICIPALITY`
+
+### Swedish EV Charging Station Validation Rules
 
 Possible rejection reasons include:
 
